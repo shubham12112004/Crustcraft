@@ -11,6 +11,7 @@ import {
   Settings, 
   X, 
   ChevronRight, 
+  ChevronLeft,
   ShoppingBag, 
   Award, 
   Flame, 
@@ -22,7 +23,12 @@ import {
   CreditCard,
   Plus,
   Minus,
-  Share2
+  Share2,
+  Gift,
+  Truck,
+  PackageCheck,
+  Calendar,
+  Heart
 } from 'lucide-react';
 
 export default function App() {
@@ -40,13 +46,51 @@ export default function App() {
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Quantity state for the 4 menu cards
+  // Quantity state for the 8 menu cards
   const [quantities, setQuantities] = useState({
-    1: 1,
-    2: 1,
-    3: 1,
-    4: 1,
+    1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1
   });
+
+  // Hero Carousel State
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroSlides = [
+    {
+      id: 1,
+      image: '/images/cakes.jpg',
+      badge: '🎂 Artisanal Cakes',
+      title: 'Custom Celebration Cakes & Theme Designs',
+      subtitle: 'Moist, handcrafted designer cakes made for birthdays, weddings, & special moments.',
+      ctaText: 'Order Custom Cake',
+    },
+    {
+      id: 2,
+      image: '/images/mithai.jpg',
+      badge: '🍬 Pure Desi Ghee',
+      title: 'Authentic Handcrafted Indian Sweets',
+      subtitle: 'Made fresh every morning using 100% pure desi ghee, saffron, and premium nuts.',
+      ctaText: 'Order Fresh Mithai',
+    },
+    {
+      id: 3,
+      image: '/images/bakery.jpg',
+      badge: '🥖 Morning Fresh',
+      title: 'Oven-Fresh Breads, Croissants & Cookies',
+      subtitle: 'Crispy savory puffs, artisan sourdough, butter croissants, and crunchy cookies.',
+      ctaText: 'Order Fresh Bakery',
+    },
+  ];
+
+  // Auto rotate hero carousel every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
 
   // Dynamic Open / Closed Status (8:00 AM - 10:30 PM)
   const [isOpenNow, setIsOpenNow] = useState(true);
@@ -95,7 +139,6 @@ export default function App() {
     };
     setBusiness(updated);
 
-    // Sync query parameters into URL bar without reload
     const url = new URL(window.location.origin + window.location.pathname);
     url.searchParams.set('name', updated.name);
     url.searchParams.set('phone', updated.phone);
@@ -118,7 +161,7 @@ export default function App() {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // ENHANCEMENT 1: Copy Shareable Link
+  // Copy Shareable Link
   const copyShareableLink = () => {
     const url = new URL(window.location.origin + window.location.pathname);
     url.searchParams.set('name', editForm.name);
@@ -154,6 +197,11 @@ export default function App() {
     return `https://wa.me/${business.phone}?text=${encodeURIComponent(message)}`;
   };
 
+  const getOccasionWhatsAppLink = (occasionTitle) => {
+    const message = `Hello ${business.name}, I want to inquire about bulk ordering for ${occasionTitle}.`;
+    return `https://wa.me/${business.phone}?text=${encodeURIComponent(message)}`;
+  };
+
   const getCallLink = () => `tel:${business.phone}`;
   
   const getMapsLink = () => 
@@ -166,57 +214,133 @@ export default function App() {
     }
   };
 
-  // Menu items data
+  // 8 EXPANDED MENU ITEMS DATA
   const menuItems = [
     {
       id: 1,
-      category: 'mithai',
-      title: 'Pure Desi Ghee Mithai',
-      itemsList: ['Kaju Katli', 'Motichoor Ladoo', 'Gulab Jamun', 'Rasgulla'],
-      priceBadge: 'Starting ₹400/box',
+      category: 'sweets',
+      title: 'Kaju Katli & Dry Fruit Sweets',
+      itemsList: ['Kaju Katli', 'Dry Fruit Barfi', 'Anjeer Roll'],
+      priceBadge: '₹450/box',
       tag: '⭐ Bestseller',
       tagBg: 'bg-amber-500 text-white',
       image: '/images/mithai.jpg',
-      description: 'Handcrafted traditional sweets made with 100% pure desi ghee, saffron, and premium dry fruits.',
+      description: 'Rich cashews and premium dry fruits crafted into melt-in-mouth traditional silver squares.',
     },
     {
       id: 2,
-      category: 'cakes',
-      title: 'Custom Celebration Cakes',
-      itemsList: ['Belgian Truffle', 'Fresh Fruit Gateau', 'Red Velvet', 'Designer Fondant'],
-      priceBadge: 'Starting ₹450/lb',
-      tag: '🎂 Freshly Baked',
-      tagBg: 'bg-pink-600 text-white',
-      image: '/images/cakes.jpg',
-      description: 'Moist, decadent cakes crafted for birthdays, anniversaries, and special moments. Eggless available.',
+      category: 'sweets',
+      title: 'Pure Desi Ghee Motichoor Ladoo',
+      itemsList: ['Motichoor Ladoo', 'Besan Ladoo', 'Saffron Boondi'],
+      priceBadge: '₹320/kg',
+      tag: '✨ Pure Ghee',
+      tagBg: 'bg-yellow-600 text-white',
+      image: '/images/hero.jpg',
+      description: 'Golden tiny boondi pearls fried in 100% pure desi ghee infused with saffron & pistachios.',
     },
     {
       id: 3,
-      category: 'bakery',
-      title: 'Fresh Bakery & Cookies',
-      itemsList: ['Dry Fruit Puffs', 'Almond Biscotti', 'Butter Cashew Biscuits', 'Croissants'],
-      priceBadge: 'Fresh Daily',
-      tag: '🥖 Oven Fresh',
-      tagBg: 'bg-emerald-600 text-white',
-      image: '/images/bakery.jpg',
-      description: 'Crispy savory puffs, butter-baked cookies, and morning fresh breads baked daily at 6 AM.',
+      category: 'cakes',
+      title: 'Belgian Chocolate Truffle Cake',
+      itemsList: ['Dark Truffle', 'Choco Ganache', 'Eggless Available'],
+      priceBadge: '₹550/lb',
+      tag: '🎂 Rich Chocolate',
+      tagBg: 'bg-pink-600 text-white',
+      image: '/images/cakes.jpg',
+      description: 'Silky smooth Belgian dark chocolate ganache layered between moist cocoa sponge cake.',
     },
     {
       id: 4,
-      category: 'snacks',
-      title: 'Hot Evening Snacks',
-      itemsList: ['Crispy Samosa', 'Gujarati Dhokla', 'Paneer Bread Pakora', 'Special Chaat'],
-      priceBadge: 'Hot & Crispy',
-      tag: '🔥 Hot & Fresh',
+      category: 'cakes',
+      title: 'Red Velvet Celebration Cake',
+      itemsList: ['Cream Cheese', 'Fresh Berries', 'Edible Gold Leaf'],
+      priceBadge: '₹600/lb',
+      tag: '🍓 Premium Cake',
       tagBg: 'bg-red-600 text-white',
+      image: '/images/redvelvet.jpg',
+      description: 'Velvety crimson sponge layered with lush cream cheese frosting and fresh berries.',
+    },
+    {
+      id: 5,
+      category: 'bakery',
+      title: 'Multi-Grain Artisan Bread & Croissants',
+      itemsList: ['Butter Croissants', 'Multi-Grain Loaf', 'Dry Fruit Puff'],
+      priceBadge: '₹140/pack',
+      tag: '🥖 Fresh Daily',
+      tagBg: 'bg-emerald-600 text-white',
+      image: '/images/bakery.jpg',
+      description: 'Golden flaky butter croissants and high-fiber multi-grain loaves baked fresh every 6 AM.',
+    },
+    {
+      id: 6,
+      category: 'bakery',
+      title: 'Choco-Chip Almond Cookies Jar',
+      itemsList: ['Dark Choco Chips', 'Roasted Almonds', 'Pure Butter'],
+      priceBadge: '₹220/jar',
+      tag: '🍪 Crunchy Jar',
+      tagBg: 'bg-amber-700 text-white',
+      image: '/images/cookies.jpg',
+      description: 'Crunchy butter cookies packed with dark chocolate chunks and sliced almonds in glass jar.',
+    },
+    {
+      id: 7,
+      category: 'bakery',
+      title: 'Crispy Paneer Bread Pakoda & Dhokla Platter',
+      itemsList: ['Paneer Pakoda', 'Khaman Dhokla', 'Tangy Chutney'],
+      priceBadge: '₹120/plate',
+      tag: '🔥 Hot & Crispy',
+      tagBg: 'bg-orange-600 text-white',
       image: '/images/snacks.jpg',
-      description: 'Delectable Indian savory snacks prepared live with rich tangy chutneys and authentic spices.',
+      description: 'Hot golden savory snacks served live with mint-coriander and sweet tamarind chutneys.',
+    },
+    {
+      id: 8,
+      category: 'hampers',
+      title: 'Festive Sweets & Dry Fruit Gift Hamper',
+      itemsList: ['Assorted Mithai', 'Roasted Cashews', 'Almonds', 'Royal Box'],
+      priceBadge: '₹850/box',
+      tag: '🎁 Royal Gift',
+      tagBg: 'bg-purple-600 text-white',
+      image: '/images/hamper.jpg',
+      description: 'Curated luxury gift box containing assorted sweets, roasted nuts, and royal festive packaging.',
     },
   ];
 
   const filteredMenuItems = activeTab === 'all' 
     ? menuItems 
     : menuItems.filter(item => item.category === activeTab);
+
+  // POPULAR OCCASIONS DATA
+  const occasions = [
+    {
+      id: 'birthday',
+      icon: '🎂',
+      title: 'Birthday Cakes',
+      subtitle: 'Custom Theme Cakes & Dessert Tables',
+      bgColor: 'from-pink-500/10 to-rose-500/20 border-pink-200 text-pink-950',
+    },
+    {
+      id: 'wedding',
+      icon: '💍',
+      title: 'Wedding Bulk Mithai',
+      subtitle: 'Royal Sweet Boxes for Guests & Functions',
+      bgColor: 'from-amber-500/10 to-yellow-500/20 border-amber-200 text-amber-950',
+    },
+    {
+      id: 'hightea',
+      icon: '🎉',
+      title: 'Office High-Tea',
+      subtitle: 'Savory Snacks, Puffs & Bakery Platters',
+      bgColor: 'from-orange-500/10 to-amber-500/20 border-orange-200 text-orange-950',
+    },
+    {
+      id: 'festive',
+      icon: '🎁',
+      title: 'Festive Gift Boxes',
+      subtitle: 'Diwali, Rakhi & Corporate Hampers',
+      bgColor: 'from-purple-500/10 to-indigo-500/20 border-purple-200 text-purple-950',
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFDF9] text-[#1F2937] pb-16 md:pb-0">
@@ -240,7 +364,7 @@ export default function App() {
             </div>
           </a>
 
-          {/* ENHANCEMENT 2: Dynamic Open / Closed Status Badge & Call CTA */}
+          {/* Dynamic Open / Closed Status Badge & Call CTA */}
           <div className="flex items-center gap-2 sm:gap-4">
             
             {/* Status Badge */}
@@ -286,10 +410,9 @@ export default function App() {
         </div>
       </header>
 
-      {/* ------------------- HERO BANNER ------------------- */}
+      {/* ------------------- DYNAMIC HERO SECTION WITH AUTOMATIC CAROUSEL ------------------- */}
       <section className="relative overflow-hidden pt-8 pb-12 lg:pt-16 lg:pb-24 bg-gradient-to-b from-amber-50/50 via-[#FFFDF9] to-[#FFFDF9]">
         
-        {/* Background Subtle Pattern Accents */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-amber-200/30 blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-200/20 blur-3xl pointer-events-none"></div>
 
@@ -302,45 +425,41 @@ export default function App() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100/80 border border-amber-300/60 text-amber-900 text-xs sm:text-sm font-bold tracking-wide shadow-xs">
                 <Sparkles className="w-4 h-4 text-amber-600 animate-spin" style={{ animationDuration: '6s' }} />
-                <span>100% Pure Desi Ghee & Fresh Daily Ingredients</span>
+                <span>{heroSlides[currentSlide].badge}</span>
               </div>
 
-              {/* Main Headline */}
-              <h2 className="font-serif-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-amber-950 tracking-tight leading-[1.15]">
-                Authentic Taste, <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900">
-                  Made Fresh Daily.
-                </span>
+              {/* Dynamic Slide Headline */}
+              <h2 className="font-serif-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-amber-950 tracking-tight leading-[1.15] min-h-[120px] transition-all duration-500">
+                {heroSlides[currentSlide].title}
               </h2>
 
               {/* Dynamic Subtitle */}
-              <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-                Welcome to <strong className="font-semibold text-amber-950">{business.name}</strong> at {business.address}. 
-                Experience premium Mithai, custom cakes, and crispy snacks ordered directly to your doorstep.
+              <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal min-h-[60px]">
+                {heroSlides[currentSlide].subtitle} Available fresh daily at <strong className="font-semibold text-amber-950">{business.name}</strong>, {business.address}.
               </p>
 
               {/* Action Buttons */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <a
-                  href={getWhatsAppLink()}
+                  href={getWhatsAppLink(heroSlides[currentSlide].title)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-7 py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-base font-bold shadow-lg shadow-[#25D366]/25 active-scale transition-all"
                 >
                   <MessageCircle className="w-5 h-5 fill-current" />
-                  <span>Order on WhatsApp</span>
+                  <span>{heroSlides[currentSlide].ctaText}</span>
                 </a>
 
                 <button
-                  onClick={() => setIsQrModalOpen(true)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-950 border border-amber-300 text-base font-bold active-scale transition-all"
+                  onClick={scrollToMenu}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-amber-100/70 hover:bg-amber-100 text-amber-950 border border-amber-300/80 text-base font-bold active-scale transition-all"
                 >
-                  <QrCode className="w-5 h-5 text-amber-800" />
-                  <span>Pay / Scan QR</span>
+                  <UtensilsCrossed className="w-5 h-5 text-amber-700" />
+                  <span>Explore 8 Specialities</span>
                 </button>
               </div>
 
-              {/* Trust Micro Indicators */}
+              {/* Micro Trust Indicators */}
               <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm font-semibold text-gray-600">
                 <div className="flex items-center gap-1.5">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -358,33 +477,76 @@ export default function App() {
 
             </div>
 
-            {/* Right Hero Image Card */}
+            {/* Right Hero Image CAROUSEL */}
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 
                 {/* Decorative border frame */}
                 <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 opacity-40 blur-lg"></div>
                 
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-amber-900">
-                  <img
-                    src="/images/hero.jpg"
-                    alt="Royal Sweets Counter Display"
-                    className="w-full h-[380px] sm:h-[440px] object-cover hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-transparent to-transparent"></div>
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-amber-900 h-[380px] sm:h-[440px]">
                   
-                  {/* Image Badge overlay */}
-                  <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-lg text-amber-950">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-wider text-amber-700 font-bold">Speciality</p>
-                        <p className="font-serif-heading text-lg font-bold">Pure Desi Ghee Sweets</p>
+                  {/* Slides */}
+                  {heroSlides.map((slide, index) => (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                        index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                      }`}
+                    >
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-transparent to-transparent"></div>
+                      
+                      {/* Image Badge overlay */}
+                      <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-lg text-amber-950">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs uppercase tracking-wider text-amber-700 font-bold">{slide.badge}</p>
+                            <p className="font-serif-heading text-base font-bold truncate max-w-[200px] sm:max-w-[240px]">{slide.title}</p>
+                          </div>
+                          <span className="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs shrink-0">
+                            Fresh Daily
+                          </span>
+                        </div>
                       </div>
-                      <span className="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs">
-                        Fresh Daily
-                      </span>
                     </div>
+                  ))}
+
+                  {/* Previous / Next Arrows */}
+                  <button
+                    onClick={prevSlide}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all"
+                    title="Previous Slide"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={nextSlide}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all"
+                    title="Next Slide"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+
+                  {/* Dot Indicators */}
+                  <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-xs">
+                    {heroSlides.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentSlide(i)}
+                        className={`h-2 rounded-full transition-all ${
+                          i === currentSlide ? 'w-6 bg-amber-400' : 'w-2 bg-white/60 hover:bg-white'
+                        }`}
+                        title={`Go to slide ${i + 1}`}
+                      />
+                    ))}
                   </div>
+
                 </div>
 
               </div>
@@ -394,78 +556,108 @@ export default function App() {
         </div>
       </section>
 
-      {/* ------------------- TRUST BADGES (4 COLUMNS) ------------------- */}
-      <section className="py-10 bg-amber-900 text-white relative">
+      {/* ------------------- EXPANDED TRUST BADGES (6 COLUMNS) ------------------- */}
+      <section className="py-10 bg-amber-950 text-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
             
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-700/30 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-xl font-bold">
-                ✨
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-base text-amber-100">100% Pure Ghee</h3>
-                <p className="text-xs text-amber-200/70 mt-1">Prepared using traditional recipes & authentic pure desi ghee.</p>
-              </div>
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">✨</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">100% Pure Ghee</h3>
+              <p className="text-[11px] text-amber-200/70">Traditional recipes</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-700/30 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-xl font-bold">
-                🥖
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-base text-amber-100">Morning Batches</h3>
-                <p className="text-xs text-amber-200/70 mt-1">Fresh batches prepared every morning at 6:00 AM sharp.</p>
-              </div>
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">🥖</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">Morning Batches</h3>
+              <p className="text-[11px] text-amber-200/70">Fresh 6:00 AM bakes</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-700/30 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-xl font-bold">
-                ⚡
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-base text-amber-100">Zero Commission</h3>
-                <p className="text-xs text-amber-200/70 mt-1">Direct WhatsApp ordering guarantees best shop prices.</p>
-              </div>
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">⚡</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">Zero Commission</h3>
+              <p className="text-[11px] text-amber-200/70">Direct WhatsApp pricing</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-700/30 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-xl font-bold">
-                🛡️
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-base text-amber-100">Kitchen Hygiene</h3>
-                <p className="text-xs text-amber-200/70 mt-1">Strict temperature control and disinfected environment.</p>
-              </div>
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">🛡️</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">Kitchen Hygiene</h3>
+              <p className="text-[11px] text-amber-200/70">FSSAI Certified</p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">🚚</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">5 km Delivery</h3>
+              <p className="text-[11px] text-amber-200/70">Same-day fast drop</p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+              <div className="text-2xl">🎁</div>
+              <h3 className="font-bold text-xs sm:text-sm text-amber-100">Gift Packaging</h3>
+              <p className="text-[11px] text-amber-200/70">Custom festive boxes</p>
             </div>
 
           </div>
         </div>
       </section>
 
-      {/* ------------------- FEATURED MENU GRID (#menu-section) ------------------- */}
-      <section id="menu-section" className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-20">
+      {/* ------------------- POPULAR OCCASIONS QUICK GRID ------------------- */}
+      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="text-center max-w-2xl mx-auto space-y-2 mb-8">
+          <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700 px-3 py-1 bg-amber-100 rounded-full inline-block">
+            Special Orders & Events
+          </span>
+          <h2 className="font-serif-heading text-2xl sm:text-3xl font-extrabold text-amber-950">
+            Planning a Celebration or Gift?
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Tap any occasion below to inquire about bulk ordering & custom packages directly on WhatsApp.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {occasions.map((occ) => (
+            <a
+              key={occ.id}
+              href={getOccasionWhatsAppLink(occ.title)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`p-5 rounded-2xl border bg-gradient-to-b ${occ.bgColor} flex flex-col items-center text-center space-y-2 hover:shadow-lg hover:-translate-y-1 active-scale transition-all group`}
+            >
+              <span className="text-3xl group-hover:scale-110 transition-transform">{occ.icon}</span>
+              <h3 className="font-serif-heading font-bold text-sm sm:text-base">{occ.title}</h3>
+              <p className="text-[11px] opacity-80">{occ.subtitle}</p>
+              <span className="text-[11px] font-bold text-amber-900 underline group-hover:text-amber-700 pt-1">
+                Inquire Bulk Order →
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* ------------------- EXPANDED FEATURED MENU GRID (#menu-section) ------------------- */}
+      <section id="menu-section" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-20">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-10">
           <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700 px-3 py-1 bg-amber-100 rounded-full inline-block">
-            Our Menu Specialties
+            Full Menu Showcase (8 Items)
           </span>
           <h2 className="font-serif-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-amber-950">
-            Handcrafted Delights & Fresh Bakery
+            Handcrafted Delights & Gourmet Bakery
           </h2>
           <p className="text-gray-600 text-base sm:text-lg">
             Select quantity and tap any menu item to instantly place your order via WhatsApp.
           </p>
 
-          {/* Category Filter Tabs */}
+          {/* 5 CATEGORY FILTER TABS */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
             {[
-              { id: 'all', label: 'All Items' },
-              { id: 'mithai', label: '🍬 Mithai' },
-              { id: 'cakes', label: '🎂 Cakes' },
-              { id: 'bakery', label: '🥖 Bakery' },
-              { id: 'snacks', label: '🥟 Snacks' },
+              { id: 'all', label: 'All Items (8)' },
+              { id: 'sweets', label: '🍬 Sweets' },
+              { id: 'cakes', label: '🎂 Designer Cakes' },
+              { id: 'bakery', label: '🥖 Bakery & Snacks' },
+              { id: 'hampers', label: '🎁 Gift Hampers' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -482,7 +674,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 4 Card Grid */}
+        {/* 8 Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {filteredMenuItems.map((card) => {
             const currentQty = quantities[card.id] || 1;
@@ -493,7 +685,7 @@ export default function App() {
                 className="bg-white rounded-3xl border border-amber-900/10 shadow-lg shadow-amber-900/5 overflow-hidden flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
               >
                 {/* Card Top Image & Badges */}
-                <div className="relative h-56 overflow-hidden bg-amber-100">
+                <div className="relative h-52 overflow-hidden bg-amber-100">
                   <img
                     src={card.image}
                     alt={card.title}
@@ -515,7 +707,7 @@ export default function App() {
                 {/* Card Body */}
                 <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                   <div>
-                    <h3 className="font-serif-heading text-xl font-bold text-amber-950 group-hover:text-amber-700 transition-colors">
+                    <h3 className="font-serif-heading text-lg font-bold text-amber-950 group-hover:text-amber-700 transition-colors">
                       {card.title}
                     </h3>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">
@@ -523,21 +715,21 @@ export default function App() {
                     </p>
 
                     {/* Bullet Pills */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {card.itemsList.map((item, i) => (
-                        <span key={i} className="text-xs font-medium px-2.5 py-1 bg-amber-50 text-amber-900 rounded-md border border-amber-200/60">
+                        <span key={i} className="text-[11px] font-medium px-2 py-0.5 bg-amber-50 text-amber-900 rounded-md border border-amber-200/60">
                           • {item}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  {/* ENHANCEMENT 4: Quantity Selector & WhatsApp Order Button */}
+                  {/* Quantity Selector & WhatsApp Order Button */}
                   <div className="pt-3 border-t border-gray-100 space-y-3">
                     
                     {/* Quantity Control Row */}
                     <div className="flex items-center justify-between bg-amber-50/70 p-2 rounded-xl border border-amber-200/60">
-                      <span className="text-xs font-bold text-amber-950">Select Quantity:</span>
+                      <span className="text-xs font-bold text-amber-950">Select Qty:</span>
                       <div className="flex items-center gap-3 bg-white rounded-lg px-2 py-1 border border-amber-300/80 shadow-xs">
                         <button
                           onClick={() => updateQuantity(card.id, -1)}
@@ -685,7 +877,6 @@ export default function App() {
                 Your trusted local Sweet Shop & Bakery, serving fresh desi ghee mithai, custom cakes, and oven-baked savories daily with zero commission online ordering.
               </p>
               
-              {/* ENHANCEMENT 3: Pay / Scan QR CTA Button in Footer */}
               <div className="pt-2 flex flex-wrap items-center gap-3">
                 <a
                   href={getWhatsAppLink()}
@@ -748,7 +939,7 @@ export default function App() {
                 </li>
                 <li className="flex justify-between py-1">
                   <span>Delivery Available:</span>
-                  <span className="font-bold text-emerald-400">All Day</span>
+                  <span className="font-bold text-emerald-400">All Day (5 km)</span>
                 </li>
               </ul>
             </div>
@@ -807,7 +998,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* ------------------- ENHANCEMENT 1: CUSTOMIZE DRAWER MODAL ------------------- */}
+      {/* ------------------- CUSTOMIZE DRAWER MODAL ------------------- */}
       {isCustomizeOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-amber-900/10 space-y-6 animate-in fade-in zoom-in duration-200 relative">
@@ -878,7 +1069,7 @@ export default function App() {
                 />
               </div>
 
-              {/* ENHANCEMENT 1: Prominent Copy Shareable Link Button */}
+              {/* Copy Shareable Link Button */}
               <div className="pt-2">
                 <button
                   type="button"
@@ -927,7 +1118,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ------------------- ENHANCEMENT 3: PAY / SCAN QR MODAL ------------------- */}
+      {/* ------------------- PAY / SCAN QR MODAL ------------------- */}
       {isQrModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-amber-900/10 space-y-5 animate-in fade-in zoom-in duration-200 relative">
@@ -954,10 +1145,8 @@ export default function App() {
             {/* Generated UPI QR Code Graphics */}
             <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200 flex flex-col items-center justify-center space-y-3">
               
-              {/* QR Graphic Box */}
               <div className="w-48 h-48 bg-white p-3 rounded-xl border-2 border-amber-900/20 shadow-md flex items-center justify-center relative">
                 <svg className="w-full h-full text-amber-950" viewBox="0 0 100 100" fill="currentColor">
-                  {/* Outer Frame Corners */}
                   <rect x="5" y="5" width="25" height="25" fill="currentColor" rx="4" />
                   <rect x="9" y="9" width="17" height="17" fill="white" rx="2" />
                   <rect x="13" y="13" width="9" height="9" fill="currentColor" rx="1" />
@@ -970,7 +1159,6 @@ export default function App() {
                   <rect x="9" y="74" width="17" height="17" fill="white" rx="2" />
                   <rect x="13" y="78" width="9" height="9" fill="currentColor" rx="1" />
 
-                  {/* QR Pattern Data Blocks */}
                   <rect x="35" y="5" width="8" height="8" />
                   <rect x="48" y="5" width="8" height="18" />
                   <rect x="60" y="12" width="6" height="8" />
@@ -993,7 +1181,6 @@ export default function App() {
                   <rect x="81" y="81" width="5" height="5" fill="currentColor" />
                 </svg>
 
-                {/* Central Shop Badge */}
                 <div className="absolute w-8 h-8 rounded-full bg-amber-600 text-white font-bold flex items-center justify-center text-xs border-2 border-white shadow-md">
                   🧁
                 </div>
@@ -1026,7 +1213,6 @@ export default function App() {
 
             </div>
 
-            {/* UPI Apps Supported Icons */}
             <div className="text-[11px] text-gray-500 font-semibold space-y-1">
               <p>Accepts GPay, PhonePe, Paytm & all UPI apps</p>
               <p className="text-[10px] text-amber-700 italic">
@@ -1034,7 +1220,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Close CTA */}
             <button
               onClick={() => setIsQrModalOpen(false)}
               className="w-full py-2.5 rounded-xl bg-amber-950 hover:bg-black text-white font-bold text-xs transition-colors"
