@@ -39,13 +39,42 @@ import {
   Key
 } from 'lucide-react';
 
+const DEFAULT_BUSINESS = {
+  name: 'Royal Sweets & Bakery',
+  phone: '919876543210',
+  address: 'Main Market, Clock Tower, City Center',
+};
+
+const getInitialBusiness = () => {
+  let saved = null;
+  try {
+    const savedStr = localStorage.getItem('bakery_business_info');
+    if (savedStr) saved = JSON.parse(savedStr);
+  } catch (e) {}
+
+  const base = saved || DEFAULT_BUSINESS;
+
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlName = params.get('name');
+    const urlPhone = params.get('phone');
+    const urlAddress = params.get('address');
+
+    if (urlName || urlPhone || urlAddress) {
+      return {
+        name: urlName || base.name,
+        phone: urlPhone ? urlPhone.replace(/[^\d]/g, '') : base.phone,
+        address: urlAddress || base.address,
+      };
+    }
+  }
+
+  return base;
+};
+
 export default function App() {
-  // 1. DYNAMIC BUSINESS STATE
-  const [business, setBusiness] = useState({
-    name: 'Royal Sweets & Bakery',
-    phone: '919876543210',
-    address: 'Main Market, Clock Tower, City Center',
-  });
+  // 1. DYNAMIC BUSINESS STATE (Initializes from localStorage or URL params)
+  const [business, setBusiness] = useState(getInitialBusiness);
 
   // ADMIN / OWNER ACCESS CONTROL STATE
   const [isAdmin, setIsAdmin] = useState(false);
@@ -80,6 +109,18 @@ export default function App() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // DYNAMICALLY SYNC DOCUMENT TAB TITLE WITH BUSINESS NAME
+  useEffect(() => {
+    if (business.name) {
+      document.title = `${business.name} - Fresh Desi Ghee Mithai & Custom Cakes`;
+    }
+  }, [business.name]);
+
+  // SYNC EDIT FORM WITH BUSINESS STATE
+  useEffect(() => {
+    setEditForm({ ...business });
+  }, [business]);
 
   // ADMIN MODE DETECTION ON MOUNT
   useEffect(() => {
@@ -287,23 +328,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Initialize state from URL query parameters on load (including ?product=id)
+  // Initialize product detail selection from URL query parameter ?product=id
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const urlName = params.get('name');
-    const urlPhone = params.get('phone');
-    const urlAddress = params.get('address');
     const urlProduct = params.get('product');
-
-    if (urlName || urlPhone || urlAddress) {
-      const updated = {
-        name: urlName || business.name,
-        phone: urlPhone ? urlPhone.replace(/[^\d]/g, '') : business.phone,
-        address: urlAddress || business.address,
-      };
-      setBusiness(updated);
-      setEditForm(updated);
-    }
 
     if (urlProduct) {
       const pId = parseInt(urlProduct, 10);
@@ -334,7 +362,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Update business details state and sync URL
+  // Update business details state, save to localStorage, and sync URL
   const handleApplyChanges = (e) => {
     e.preventDefault();
     const cleanedPhone = editForm.phone.replace(/[^\d]/g, '');
@@ -342,8 +370,16 @@ export default function App() {
       ...editForm,
       phone: cleanedPhone || '919876543210',
     };
+
+    // 1. Update React State
     setBusiness(updated);
 
+    // 2. Persist in localStorage so it stays updated on page refreshes
+    try {
+      localStorage.setItem('bakery_business_info', JSON.stringify(updated));
+    } catch (err) {}
+
+    // 3. Sync URL params
     const url = new URL(window.location.href);
     url.searchParams.set('name', updated.name);
     url.searchParams.set('phone', updated.phone);
@@ -351,17 +387,16 @@ export default function App() {
     window.history.replaceState({}, '', url.toString());
 
     setIsCustomizeOpen(false);
-    triggerToast('Shop details updated successfully!');
+    triggerToast(`Store name updated to "${updated.name}"!`);
   };
 
   const handleResetDefaults = () => {
-    const defaults = {
-      name: 'Royal Sweets & Bakery',
-      phone: '919876543210',
-      address: 'Main Market, Clock Tower, City Center',
-    };
-    setBusiness(defaults);
-    setEditForm(defaults);
+    setBusiness(DEFAULT_BUSINESS);
+    setEditForm(DEFAULT_BUSINESS);
+
+    try {
+      localStorage.removeItem('bakery_business_info');
+    } catch (e) {}
 
     const url = new URL(window.location.origin + window.location.pathname);
     window.history.replaceState({}, '', url.toString());
@@ -693,7 +728,7 @@ export default function App() {
             href="#" 
             onClick={handleLogoClick}
             className="flex items-center gap-3 group select-none"
-            title="Royal Sweets & Bakery (Owner: Triple-click logo to access admin edit mode)"
+            title={`${business.name} (Owner: Triple-click logo to edit store details)`}
           >
             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300 border border-amber-300/40 relative">
               <span className="text-2xl">🧁</span>
