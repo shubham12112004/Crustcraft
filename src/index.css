@@ -26,10 +26,15 @@
   background: #D1D5DB;
 }
 
-/* Shimmer animation for badges */
+/* Shimmer animation for badges and buttons */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
 }
 
 .animate-pulse-subtle {
@@ -38,8 +43,69 @@
 
 /* Button scaling feedback */
 .active-scale {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .active-scale:active {
-  transform: scale(0.95);
+  transform: scale(0.96) translateY(1px);
 }
+
+/* Shimmer overlay effect for primary action buttons */
+.btn-shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+}
+.btn-shimmer-effect:hover::after {
+  animation: shimmer-sweep 1.2s ease-in-out infinite;
+}
+
+/* Glassmorphic button effect */
+.glass-btn {
+  background: rgba(255, 253, 249, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(180, 83, 9, 0.18);
+}
+.glass-btn:hover {
+  background: rgba(255, 253, 249, 0.95);
+  border-color: rgba(180, 83, 9, 0.35);
+  box-shadow: 0 8px 25px -5px rgba(120, 53, 15, 0.15);
+}
+
+/* Glow shadow utilities */
+.shadow-glow-whatsapp {
+  box-shadow: 0 8px 25px -4px rgba(37, 211, 102, 0.35), 0 4px 10px -2px rgba(37, 211, 102, 0.2);
+}
+.shadow-glow-whatsapp:hover {
+  box-shadow: 0 12px 30px -2px rgba(37, 211, 102, 0.5), 0 6px 15px -2px rgba(37, 211, 102, 0.3);
+}
+
+.shadow-glow-amber {
+  box-shadow: 0 8px 25px -4px rgba(120, 53, 15, 0.25), 0 4px 10px -2px rgba(217, 119, 6, 0.2);
+}
+.shadow-glow-amber:hover {
+  box-shadow: 0 12px 30px -2px rgba(120, 53, 15, 0.38), 0 6px 15px -2px rgba(217, 119, 6, 0.3);
+}
+
+.shadow-glow-gold {
+  box-shadow: 0 8px 25px -4px rgba(245, 158, 11, 0.3), 0 4px 10px -2px rgba(217, 119, 6, 0.2);
+}
+.shadow-glow-gold:hover {
+  box-shadow: 0 12px 30px -2px rgba(245, 158, 11, 0.45), 0 6px 15px -2px rgba(217, 119, 6, 0.3);
+}
+

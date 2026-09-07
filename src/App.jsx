@@ -31,7 +31,9 @@ import {
   Info,
   CheckCircle,
   ShoppingCart,
-  Heart
+  Heart,
+  Trash2,
+  ArrowRight
 } from 'lucide-react';
 
 export default function App() {
@@ -58,6 +60,75 @@ export default function App() {
   const [quantities, setQuantities] = useState({
     1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1
   });
+
+  // Shopping Cart State
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const addToCart = (product, variant = null, qty = 1, e = null) => {
+    if (e) e.stopPropagation();
+    const vObj = variant || (product.variants ? product.variants[0] : { label: 'Standard', multiplier: 1 });
+    const unitPrice = Math.round(product.basePrice * vObj.multiplier);
+    const cartItemId = `${product.id}-${vObj.label}`;
+
+    setCart((prevCart) => {
+      const existingIndex = prevCart.findIndex(item => item.cartItemId === cartItemId);
+      if (existingIndex > -1) {
+        const updated = [...prevCart];
+        updated[existingIndex].quantity += qty;
+        return updated;
+      } else {
+        return [...prevCart, {
+          cartItemId,
+          id: product.id,
+          title: product.title,
+          variantLabel: vObj.label,
+          unitPrice,
+          quantity: qty,
+          image: product.image,
+        }];
+      }
+    });
+
+    triggerToast(`Added ${qty}x ${product.title} (${vObj.label}) to cart!`);
+  };
+
+  const updateCartQuantity = (cartItemId, delta) => {
+    setCart(prev => prev.map(item => {
+      if (item.cartItemId === cartItemId) {
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : null;
+      }
+      return item;
+    }).filter(Boolean));
+  };
+
+  const removeFromCart = (cartItemId) => {
+    setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+
+  const getCartWhatsAppMessage = () => {
+    if (cart.length === 0) return '';
+    let msg = `Hello ${business.name}, I would like to place an order for the following items:\n\n`;
+    cart.forEach((item, index) => {
+      msg += `${index + 1}. ${item.title} (${item.variantLabel}) - ${item.quantity}x @ ₹${item.unitPrice} = ₹${item.quantity * item.unitPrice}\n`;
+    });
+    msg += `\n*Total Amount: ₹${cartTotal}*\n`;
+    msg += `Delivery Address: ${business.address}\n\n`;
+    msg += `Please confirm my order. Thank you!`;
+    return msg;
+  };
 
   // Hero Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -95,7 +166,7 @@ export default function App() {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
@@ -183,6 +254,7 @@ export default function App() {
     window.history.replaceState({}, '', url.toString());
 
     setIsCustomizeOpen(false);
+    triggerToast('Shop details updated successfully!');
   };
 
   const handleResetDefaults = () => {
@@ -196,6 +268,7 @@ export default function App() {
 
     const url = new URL(window.location.origin + window.location.pathname);
     window.history.replaceState({}, '', url.toString());
+    triggerToast('Reset to default shop details');
   };
 
   // Copy Shareable Link
@@ -215,7 +288,8 @@ export default function App() {
   };
 
   // Quantity counter helpers for grid cards
-  const updateQuantity = (id, delta) => {
+  const updateQuantity = (id, delta, e = null) => {
+    if (e) e.stopPropagation();
     setQuantities(prev => ({
       ...prev,
       [id]: Math.max(1, (prev[id] || 1) + delta)
@@ -468,28 +542,28 @@ export default function App() {
       icon: '🎂',
       title: 'Birthday Cakes',
       subtitle: 'Custom Theme Cakes & Dessert Tables',
-      bgColor: 'from-pink-500/10 to-rose-500/20 border-pink-200 text-pink-950',
+      bgColor: 'from-pink-500/10 via-rose-500/10 to-pink-500/20 border-pink-200/80 text-pink-950',
     },
     {
       id: 'wedding',
       icon: '💍',
       title: 'Wedding Bulk Mithai',
       subtitle: 'Royal Sweet Boxes for Guests & Functions',
-      bgColor: 'from-amber-500/10 to-yellow-500/20 border-amber-200 text-amber-950',
+      bgColor: 'from-amber-500/10 via-yellow-500/10 to-amber-500/20 border-amber-200/80 text-amber-950',
     },
     {
       id: 'hightea',
       icon: '🎉',
       title: 'Office High-Tea',
       subtitle: 'Savory Snacks, Puffs & Bakery Platters',
-      bgColor: 'from-orange-500/10 to-amber-500/20 border-orange-200 text-orange-950',
+      bgColor: 'from-orange-500/10 via-amber-500/10 to-orange-500/20 border-orange-200/80 text-orange-950',
     },
     {
       id: 'festive',
       icon: '🎁',
       title: 'Festive Gift Boxes',
       subtitle: 'Diwali, Rakhi & Corporate Hampers',
-      bgColor: 'from-purple-500/10 to-indigo-500/20 border-purple-200 text-purple-950',
+      bgColor: 'from-purple-500/10 via-indigo-500/10 to-purple-500/20 border-purple-200/80 text-purple-950',
     },
   ];
 
@@ -497,92 +571,115 @@ export default function App() {
   const currentVariant = activeProduct ? activeProduct.variants[selectedVariantIndex] || activeProduct.variants[0] : null;
   const unitPrice = activeProduct && currentVariant ? Math.round(activeProduct.basePrice * currentVariant.multiplier) : 0;
   const totalPrice = unitPrice * detailQuantity;
-  const calculatedMrp = activeProduct && currentVariant ? Math.round(activeProduct.mrp * currentVariant.multiplier * detailQuantity) : 0;
 
   const detailWhatsAppMessage = activeProduct && currentVariant
     ? `Hello ${business.name}, I want to order ${detailQuantity}x ${activeProduct.title} (${currentVariant.label}) - Total: ₹${totalPrice}. Please confirm delivery to ${business.address}.`
     : '';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFDF9] text-[#1F2937] pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-[#FFFDF9] text-[#1F2937] pb-16 md:pb-0 relative font-sans">
       
+      {/* ------------------- TOAST NOTIFICATION ------------------- */}
+      {toastMessage && (
+        <div className="fixed top-24 right-4 z-50 bg-amber-950 text-white px-4 py-3 rounded-2xl shadow-2xl border border-amber-600/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+          <span className="text-xs sm:text-sm font-extrabold">{toastMessage}</span>
+        </div>
+      )}
+
       {/* ------------------- STICKY HEADER NAVBAR ------------------- */}
       <header className="sticky top-0 z-40 bg-[#FFFDF9]/90 backdrop-blur-md border-b border-amber-900/10 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3 sm:gap-4">
           
           {/* Logo & Shop Name */}
           <a 
             href="#" 
             onClick={(e) => {
-              if (selectedProductId) {
-                e.preventDefault();
-                closeProductDetail();
-              }
+              e.preventDefault();
+              if (selectedProductId) closeProductDetail();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className="flex items-center gap-3 group"
           >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300 border border-amber-300/40">
               <span className="text-2xl">🧁</span>
             </div>
             <div>
-              <h1 className="font-serif-heading font-bold text-xl sm:text-2xl text-amber-950 leading-tight group-hover:text-amber-700 transition-colors">
+              <h1 className="font-serif-heading font-extrabold text-lg sm:text-2xl text-amber-950 leading-tight group-hover:text-amber-700 transition-colors">
                 {business.name}
               </h1>
-              <p className="text-xs text-amber-700/80 font-medium flex items-center gap-1">
+              <p className="text-[11px] sm:text-xs text-amber-700/80 font-bold flex items-center gap-1">
                 Fresh Mithai & Bakery
               </p>
             </div>
           </a>
 
-          {/* Dynamic Open / Closed Status Badge & Call CTA */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Dynamic Status Badge & Action CTAs */}
+          <div className="flex items-center gap-2 sm:gap-3">
             
             {/* Status Badge */}
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+            <div className={`hidden xs:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
               isOpenNow 
                 ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs' 
                 : 'bg-red-50 border-red-300 text-red-900 shadow-xs'
             }`}>
               <span className={`w-2 h-2 rounded-full ${isOpenNow ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 {isOpenNow ? 'Open Now (8:00 AM – 10:30 PM)' : 'Closed Now (Opens 8:00 AM)'}
               </span>
-              <span className="sm:hidden">
-                {isOpenNow ? 'Open Now' : 'Closed'}
+              <span className="lg:hidden">
+                {isOpenNow ? 'Open' : 'Closed'}
               </span>
             </div>
 
             {selectedProductId ? (
               <button
                 onClick={closeProductDetail}
-                className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 hover:text-amber-700 bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-300/60"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-950 bg-amber-100/90 hover:bg-amber-200 px-3.5 py-2 rounded-xl border border-amber-300/80 active-scale shadow-xs transition-all"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-4 h-4 text-amber-800" />
                 <span>All Products</span>
               </button>
             ) : (
               <button 
                 onClick={scrollToMenu}
-                className="hidden lg:inline-flex items-center gap-1.5 text-sm font-semibold text-amber-900 hover:text-amber-700 px-3 py-2"
+                className="hidden lg:inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-950 hover:text-amber-700 bg-amber-100/60 hover:bg-amber-100 px-4 py-2 rounded-xl border border-amber-300/50 active-scale transition-all shadow-xs"
               >
-                Menu
+                <UtensilsCrossed className="w-3.5 h-3.5 text-amber-700" />
+                <span>Menu</span>
               </button>
             )}
+
+            {/* Shopping Cart Header Button */}
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative inline-flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-900 via-amber-950 to-amber-900 hover:from-black hover:to-amber-900 text-white text-xs sm:text-sm font-extrabold shadow-glow-amber active-scale transition-all border border-amber-600/30 group"
+              title="View Shopping Cart"
+            >
+              <ShoppingCart className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="hidden xs:inline">Cart</span>
+              {cartItemCount > 0 && (
+                <span className="bg-amber-400 text-amber-950 font-black text-[11px] px-2 py-0.5 rounded-full shadow-sm">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
 
             {/* Pay / Scan QR CTA Header */}
             <button
               onClick={() => setIsQrModalOpen(true)}
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold border border-amber-300/80 active-scale transition-all"
+              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-100 to-amber-200/90 hover:from-amber-200 hover:to-amber-300 text-amber-950 text-xs font-extrabold border border-amber-300/90 shadow-glow-gold active-scale transition-all"
             >
               <QrCode className="w-4 h-4 text-amber-800" />
               <span>Pay QR</span>
             </button>
 
+            {/* Call Shop Header Button */}
             <a
               href={getCallLink()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-900 hover:bg-amber-950 text-white text-sm font-semibold shadow-md shadow-amber-950/15 active-scale transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-900 via-amber-950 to-amber-900 hover:from-black hover:to-amber-900 text-white text-xs sm:text-sm font-extrabold shadow-glow-amber active-scale transition-all border border-amber-600/30 group"
             >
-              <Phone className="w-4 h-4 text-amber-400" />
+              <Phone className="w-4 h-4 text-amber-400 group-hover:rotate-12 transition-transform" />
               <span className="hidden sm:inline">Call Shop</span>
             </a>
           </div>
@@ -594,25 +691,25 @@ export default function App() {
       {activeProduct ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-8 animate-in fade-in duration-300">
           
-          {/* Sticky Top Navigation Breadcrumb / Back Button */}
+          {/* Top Navigation Breadcrumb / Back Button */}
           <div className="flex items-center justify-between border-b border-amber-900/10 pb-4">
             <button
               onClick={closeProductDetail}
-              className="inline-flex items-center gap-2 text-sm font-bold text-amber-900 hover:text-amber-700 bg-amber-100/70 hover:bg-amber-100 px-4 py-2 rounded-xl border border-amber-300/60 active-scale transition-all"
+              className="inline-flex items-center gap-2.5 text-xs sm:text-sm font-extrabold text-amber-950 hover:text-amber-700 bg-amber-100/90 hover:bg-amber-200 px-4.5 py-2.5 rounded-xl border border-amber-300/80 active-scale shadow-sm transition-all"
             >
               <ArrowLeft className="w-4 h-4 text-amber-800" />
               <span>← Back to All Sweets & Cakes</span>
             </button>
 
-            <div className="text-xs text-gray-500 font-medium hidden sm:block">
-              Category: <span className="font-bold text-amber-950 uppercase">{activeProduct.category}</span>
+            <div className="text-xs text-gray-500 font-bold hidden sm:block">
+              Category: <span className="text-amber-950 uppercase tracking-wide bg-amber-100 px-2.5 py-1 rounded-md">{activeProduct.category}</span>
             </div>
           </div>
 
           {/* Amazon 2-Column Split Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             
-            {/* Left Column: Product Image & Trust Badges */}
+            {/* Left Column: Product Image & Badges */}
             <div className="lg:col-span-6 space-y-6">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-amber-100 group">
                 <img
@@ -622,50 +719,50 @@ export default function App() {
                 />
                 
                 {/* Top Badge Overlay */}
-                <span className={`absolute top-4 left-4 text-xs font-extrabold px-3 py-1.5 rounded-full shadow-lg ${activeProduct.tagBg}`}>
+                <span className={`absolute top-4 left-4 text-xs font-extrabold px-3.5 py-1.5 rounded-full shadow-lg ${activeProduct.tagBg}`}>
                   {activeProduct.tag}
                 </span>
 
-                <span className="absolute top-4 right-4 text-xs font-bold px-3 py-1.5 bg-white/95 text-amber-950 backdrop-blur-md rounded-xl shadow-md border border-white">
+                <span className="absolute top-4 right-4 text-xs font-extrabold px-3.5 py-1.5 bg-white/95 text-amber-950 backdrop-blur-md rounded-xl shadow-md border border-white">
                   100% Pure Desi Ghee
                 </span>
               </div>
 
               {/* Product Feature Pills */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1">
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1 shadow-xs">
                   <div className="text-xl">✨</div>
-                  <p className="text-[11px] font-bold text-amber-950">Pure Ingredients</p>
+                  <p className="text-[11px] font-extrabold text-amber-950">Pure Ingredients</p>
                 </div>
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1">
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1 shadow-xs">
                   <div className="text-xl">🥖</div>
-                  <p className="text-[11px] font-bold text-amber-950">Baked Fresh Today</p>
+                  <p className="text-[11px] font-extrabold text-amber-950">Baked Fresh Today</p>
                 </div>
-                <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1">
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-center space-y-1 shadow-xs">
                   <div className="text-xl">🛡️</div>
-                  <p className="text-[11px] font-bold text-amber-950">FSSAI Certified</p>
+                  <p className="text-[11px] font-extrabold text-amber-950">FSSAI Certified</p>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Amazon-style Product Options & Pricing */}
-            <div className="lg:col-span-6 space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-amber-900/10 shadow-lg">
+            <div className="lg:col-span-6 space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-amber-900/10 shadow-xl">
               
               {/* Product Title & Ratings */}
-              <div className="space-y-2 border-b border-gray-100 pb-4">
-                <span className="text-xs font-bold uppercase tracking-widest text-amber-700 px-3 py-1 bg-amber-100 rounded-full inline-block">
+              <div className="space-y-2.5 border-b border-gray-100 pb-5">
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-amber-800 px-3 py-1 bg-amber-100/80 rounded-full inline-block">
                   Fresh Speciality
                 </span>
-                <h2 className="font-serif-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-950">
+                <h2 className="font-serif-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-950 leading-tight">
                   {activeProduct.title}
                 </h2>
                 
                 <div className="flex items-center gap-3 text-xs sm:text-sm">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  <div className="flex items-center gap-1.5 text-amber-500 font-extrabold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
                     <Star className="w-4 h-4 fill-current text-amber-500" />
                     <span>{activeProduct.rating}</span>
                   </div>
-                  <span className="text-gray-500">({activeProduct.ratingCount} verified customer ratings)</span>
+                  <span className="text-gray-500 font-medium">({activeProduct.ratingCount} verified ratings)</span>
                 </div>
               </div>
 
@@ -675,19 +772,19 @@ export default function App() {
                   <span className="text-3xl sm:text-4xl font-extrabold text-amber-950">
                     ₹{unitPrice}
                   </span>
-                  <span className="text-sm text-gray-400 line-through">
+                  <span className="text-sm text-gray-400 line-through font-semibold">
                     M.R.P: ₹{Math.round(activeProduct.mrp * currentVariant.multiplier)}
                   </span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-md">
+                  <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-300">
                     {activeProduct.discount}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">Inclusive of all local taxes & fresh packaging</p>
+                <p className="text-xs text-gray-500 font-medium">Inclusive of all local taxes & fresh packaging</p>
               </div>
 
               {/* Weight / Variant Radio Selector */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <div className="space-y-2.5">
+                <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider">
                   Select Weight / Pack Variant:
                 </label>
                 <div className="flex flex-wrap gap-2.5">
@@ -695,10 +792,10 @@ export default function App() {
                     <button
                       key={idx}
                       onClick={() => setSelectedVariantIndex(idx)}
-                      className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border transition-all ${
+                      className={`px-4.5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold border-2 transition-all active-scale ${
                         selectedVariantIndex === idx
-                          ? 'bg-amber-950 text-white border-amber-950 shadow-md scale-105'
-                          : 'bg-amber-50/80 hover:bg-amber-100 text-amber-950 border-amber-300'
+                          ? 'bg-gradient-to-r from-amber-950 to-amber-900 text-white border-amber-950 shadow-glow-amber scale-105'
+                          : 'bg-amber-50/80 hover:bg-amber-100 text-amber-950 border-amber-200'
                       }`}
                     >
                       {v.label}
@@ -708,15 +805,15 @@ export default function App() {
               </div>
 
               {/* Quantity Counter Stepper */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <div className="space-y-2.5">
+                <label className="block text-xs font-extrabold text-gray-800 uppercase tracking-wider">
                   Quantity:
                 </label>
-                <div className="inline-flex items-center gap-3 bg-amber-50/80 rounded-xl px-3 py-1.5 border border-amber-300">
+                <div className="inline-flex items-center gap-3 bg-amber-50/80 rounded-2xl px-3.5 py-2 border border-amber-300 shadow-xs">
                   <button
                     onClick={() => setDetailQuantity(prev => Math.max(1, prev - 1))}
                     disabled={detailQuantity <= 1}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-white text-amber-950 border border-gray-200 disabled:opacity-40 transition-colors"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 font-bold active-scale transition-all disabled:opacity-40 shadow-xs"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -725,7 +822,7 @@ export default function App() {
                   </span>
                   <button
                     onClick={() => setDetailQuantity(prev => prev + 1)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-white text-amber-950 border border-gray-200 transition-colors"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 font-bold active-scale transition-all shadow-xs"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -733,23 +830,23 @@ export default function App() {
               </div>
 
               {/* Dynamic Live Calculated Total */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-100/80 to-amber-50 border border-amber-300/80 flex items-center justify-between">
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-100/90 via-amber-50 to-amber-100/90 border border-amber-300/80 flex items-center justify-between shadow-xs">
                 <div>
-                  <span className="text-xs uppercase tracking-wider font-bold text-amber-800">Total Order Amount</span>
-                  <p className="text-2xl font-extrabold text-amber-950">₹{totalPrice}</p>
+                  <span className="text-xs uppercase tracking-wider font-extrabold text-amber-800">Total Order Amount</span>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-amber-950">₹{totalPrice}</p>
                 </div>
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-300">
+                <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-3.5 py-1.5 rounded-xl border border-emerald-300 shadow-xs">
                   ⚡ Ready to Dispatch
                 </span>
               </div>
 
               {/* Stock & Delivery Badge */}
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-900 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-xs font-semibold text-emerald-950 space-y-1 shadow-xs">
+                <div className="flex items-center gap-2 font-extrabold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span>In Stock | Prepared Fresh Today</span>
                 </div>
-                <p className="text-[11px] text-emerald-800">
+                <p className="text-[11px] text-emerald-800 font-medium">
                   🚚 Free local store pickup or doorstep delivery in 5 km radius from {business.address}.
                 </p>
               </div>
@@ -760,15 +857,23 @@ export default function App() {
                   href={`https://wa.me/${business.phone}?text=${encodeURIComponent(detailWhatsAppMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-base font-extrabold shadow-xl shadow-[#25D366]/25 active-scale transition-all"
+                  className="w-full inline-flex items-center justify-center gap-3 px-6 py-4.5 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#20bd5a] hover:to-[#199447] text-white text-base font-extrabold shadow-glow-whatsapp active-scale btn-shimmer-effect transition-all border border-emerald-400/30"
                 >
                   <MessageCircle className="w-5 h-5 fill-current" />
                   <span>Buy Now via WhatsApp (₹{totalPrice})</span>
                 </a>
 
+                <button
+                  onClick={() => addToCart(activeProduct, currentVariant, detailQuantity)}
+                  className="w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-900 via-amber-950 to-amber-900 hover:from-black hover:to-amber-900 text-white text-base font-extrabold shadow-glow-amber active-scale btn-shimmer-effect transition-all border border-amber-600/30"
+                >
+                  <ShoppingCart className="w-5 h-5 text-amber-400" />
+                  <span>+ Add to Shopping Cart</span>
+                </button>
+
                 <a
                   href={getCallLink()}
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-sm font-bold transition-all"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl glass-btn text-amber-950 text-sm font-bold active-scale transition-all"
                 >
                   <Phone className="w-4 h-4 text-amber-800" />
                   <span>Call Shop for Special Customization</span>
@@ -782,11 +887,11 @@ export default function App() {
                   <span>Product Details & Specs</span>
                 </h4>
                 
-                <p className="text-xs text-gray-600 leading-relaxed">
+                <p className="text-xs text-gray-600 leading-relaxed font-medium">
                   {activeProduct.description}
                 </p>
 
-                <div className="text-xs space-y-2 bg-gray-50 p-4 rounded-2xl border border-gray-200/80">
+                <div className="text-xs space-y-2 bg-gray-50/80 p-4 rounded-2xl border border-gray-200/80">
                   <div>
                     <span className="font-bold text-gray-800">Ingredients: </span>
                     <span className="text-gray-600">{activeProduct.specs.ingredients}</span>
@@ -811,7 +916,7 @@ export default function App() {
         /* ------------------- MAIN CATALOG GRID VIEW ------------------- */
         <>
           {/* HERO CAROUSEL */}
-          <section className="relative overflow-hidden pt-8 pb-12 lg:pt-16 lg:pb-24 bg-gradient-to-b from-amber-50/50 via-[#FFFDF9] to-[#FFFDF9]">
+          <section className="relative overflow-hidden pt-8 pb-12 lg:pt-16 lg:pb-24 bg-gradient-to-b from-amber-50/60 via-[#FFFDF9] to-[#FFFDF9]">
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-amber-200/30 blur-3xl pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-200/20 blur-3xl pointer-events-none"></div>
 
@@ -821,7 +926,7 @@ export default function App() {
                 {/* Left Content */}
                 <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
                   
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100/80 border border-amber-300/60 text-amber-900 text-xs sm:text-sm font-bold tracking-wide shadow-xs">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100/90 border border-amber-300/70 text-amber-950 text-xs sm:text-sm font-extrabold tracking-wide shadow-xs">
                     <Sparkles className="w-4 h-4 text-amber-600 animate-spin" style={{ animationDuration: '6s' }} />
                     <span>{heroSlides[currentSlide].badge}</span>
                   </div>
@@ -830,8 +935,8 @@ export default function App() {
                     {heroSlides[currentSlide].title}
                   </h2>
 
-                  <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal min-h-[60px]">
-                    {heroSlides[currentSlide].subtitle} Available fresh daily at <strong className="font-semibold text-amber-950">{business.name}</strong>, {business.address}.
+                  <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium min-h-[60px]">
+                    {heroSlides[currentSlide].subtitle} Available fresh daily at <strong className="font-extrabold text-amber-950">{business.name}</strong>, {business.address}.
                   </p>
 
                   <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -839,7 +944,7 @@ export default function App() {
                       href={getWhatsAppLink(heroSlides[currentSlide].title)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-7 py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-base font-bold shadow-lg shadow-[#25D366]/25 active-scale transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#20bd5a] hover:to-[#199447] text-white text-base font-extrabold shadow-glow-whatsapp active-scale btn-shimmer-effect transition-all border border-emerald-400/30"
                     >
                       <MessageCircle className="w-5 h-5 fill-current" />
                       <span>{heroSlides[currentSlide].ctaText}</span>
@@ -847,14 +952,14 @@ export default function App() {
 
                     <button
                       onClick={scrollToMenu}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-amber-100/70 hover:bg-amber-100 text-amber-950 border border-amber-300/80 text-base font-bold active-scale transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl glass-btn text-amber-950 text-base font-extrabold active-scale transition-all shadow-sm"
                     >
-                      <UtensilsCrossed className="w-5 h-5 text-amber-700" />
+                      <UtensilsCrossed className="w-5 h-5 text-amber-800" />
                       <span>Explore 8 Specialities</span>
                     </button>
                   </div>
 
-                  <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm font-semibold text-gray-600">
+                  <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm font-extrabold text-gray-700">
                     <div className="flex items-center gap-1.5">
                       <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                       <span>4.9 ★ (1,200+ Reviews)</span>
@@ -891,15 +996,15 @@ export default function App() {
                             alt={slide.title}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-amber-950/85 via-transparent to-transparent"></div>
                           
                           <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-lg text-amber-950">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-xs uppercase tracking-wider text-amber-700 font-bold">{slide.badge}</p>
+                                <p className="text-xs uppercase tracking-wider text-amber-800 font-extrabold">{slide.badge}</p>
                                 <p className="font-serif-heading text-base font-bold truncate max-w-[200px] sm:max-w-[240px]">{slide.title}</p>
                               </div>
-                              <span className="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs shrink-0">
+                              <span className="px-3 py-1 bg-amber-900 text-amber-100 rounded-lg text-xs font-extrabold shadow-xs shrink-0 border border-amber-700">
                                 Fresh Daily
                               </span>
                             </div>
@@ -907,29 +1012,30 @@ export default function App() {
                         </div>
                       ))}
 
+                      {/* Carousel Controls */}
                       <button
                         onClick={prevSlide}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-black/40 hover:bg-amber-900/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl active-scale transition-all group"
                         title="Previous Slide"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
                       </button>
 
                       <button
                         onClick={nextSlide}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs transition-all"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-black/40 hover:bg-amber-900/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl active-scale transition-all group"
                         title="Next Slide"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
                       </button>
 
-                      <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-xs">
+                      <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20">
                         {heroSlides.map((_, i) => (
                           <button
                             key={i}
                             onClick={() => setCurrentSlide(i)}
-                            className={`h-2 rounded-full transition-all ${
-                              i === currentSlide ? 'w-6 bg-amber-400' : 'w-2 bg-white/60 hover:bg-white'
+                            className={`h-2.5 rounded-full transition-all active-scale ${
+                              i === currentSlide ? 'w-7 bg-amber-400' : 'w-2.5 bg-white/60 hover:bg-white'
                             }`}
                             title={`Go to slide ${i + 1}`}
                           />
@@ -946,44 +1052,44 @@ export default function App() {
           </section>
 
           {/* 6 TRUST BADGES */}
-          <section className="py-10 bg-amber-950 text-white relative">
+          <section className="py-10 bg-amber-950 text-white relative border-y border-amber-800/40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
                 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">✨</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">100% Pure Ghee</h3>
-                  <p className="text-[11px] text-amber-200/70">Traditional recipes</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">100% Pure Ghee</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">Traditional recipes</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">🥖</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">Morning Batches</h3>
-                  <p className="text-[11px] text-amber-200/70">Fresh 6:00 AM bakes</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">Morning Batches</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">Fresh 6:00 AM bakes</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">⚡</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">Zero Commission</h3>
-                  <p className="text-[11px] text-amber-200/70">Direct WhatsApp pricing</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">Zero Commission</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">Direct WhatsApp pricing</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">🛡️</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">Kitchen Hygiene</h3>
-                  <p className="text-[11px] text-amber-200/70">FSSAI Certified</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">Kitchen Hygiene</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">FSSAI Certified</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">🚚</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">5 km Delivery</h3>
-                  <p className="text-[11px] text-amber-200/70">Same-day fast drop</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">5 km Delivery</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">Same-day fast drop</p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-900/40 border border-amber-700/30 flex flex-col items-center text-center space-y-1">
+                <div className="p-4 rounded-2xl bg-amber-900/50 border border-amber-700/40 flex flex-col items-center text-center space-y-1.5 hover:bg-amber-900/80 transition-colors">
                   <div className="text-2xl">🎁</div>
-                  <h3 className="font-bold text-xs sm:text-sm text-amber-100">Gift Packaging</h3>
-                  <p className="text-[11px] text-amber-200/70">Custom festive boxes</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-amber-100">Gift Packaging</h3>
+                  <p className="text-[11px] text-amber-200/70 font-medium">Custom festive boxes</p>
                 </div>
 
               </div>
@@ -991,34 +1097,38 @@ export default function App() {
           </section>
 
           {/* POPULAR OCCASIONS QUICK GRID */}
-          <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="text-center max-w-2xl mx-auto space-y-2 mb-8">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700 px-3 py-1 bg-amber-100 rounded-full inline-block">
+          <section className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="text-center max-w-2xl mx-auto space-y-2 mb-10">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-amber-800 px-3.5 py-1.5 bg-amber-100 rounded-full inline-block border border-amber-300/60 shadow-xs">
                 Special Orders & Events
               </span>
-              <h2 className="font-serif-heading text-2xl sm:text-3xl font-extrabold text-amber-950">
+              <h2 className="font-serif-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-950">
                 Planning a Celebration or Gift?
               </h2>
-              <p className="text-xs sm:text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">
                 Tap any occasion below to inquire about bulk ordering & custom packages directly on WhatsApp.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
               {occasions.map((occ) => (
                 <a
                   key={occ.id}
                   href={getOccasionWhatsAppLink(occ.title)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`p-5 rounded-2xl border bg-gradient-to-b ${occ.bgColor} flex flex-col items-center text-center space-y-2 hover:shadow-lg hover:-translate-y-1 active-scale transition-all group`}
+                  className={`p-6 rounded-3xl border bg-gradient-to-b ${occ.bgColor} flex flex-col items-center text-center space-y-3 hover:shadow-xl hover:-translate-y-1.5 active-scale transition-all duration-300 group`}
                 >
-                  <span className="text-3xl group-hover:scale-110 transition-transform">{occ.icon}</span>
-                  <h3 className="font-serif-heading font-bold text-sm sm:text-base">{occ.title}</h3>
-                  <p className="text-[11px] opacity-80">{occ.subtitle}</p>
-                  <span className="text-[11px] font-bold text-amber-900 underline group-hover:text-amber-700 pt-1">
-                    Inquire Bulk Order →
-                  </span>
+                  <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{occ.icon}</span>
+                  <h3 className="font-serif-heading font-extrabold text-base sm:text-lg">{occ.title}</h3>
+                  <p className="text-xs opacity-85 font-medium">{occ.subtitle}</p>
+                  
+                  <div className="pt-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-950 group-hover:text-amber-700 bg-white/80 group-hover:bg-white px-3.5 py-1.5 rounded-full border border-amber-300/60 shadow-xs transition-all">
+                      <span>Inquire Bulk Order</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
                 </a>
               ))}
             </div>
@@ -1028,18 +1138,18 @@ export default function App() {
           <section id="menu-section" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full scroll-mt-20">
             
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-10">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-amber-700 px-3 py-1 bg-amber-100 rounded-full inline-block">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-amber-800 px-3.5 py-1.5 bg-amber-100 rounded-full inline-block border border-amber-300/60 shadow-xs">
                 Full Menu Showcase (Click to View Details)
               </span>
               <h2 className="font-serif-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-amber-950">
                 Handcrafted Delights & Gourmet Bakery
               </h2>
-              <p className="text-gray-600 text-base sm:text-lg">
-                Tap any item card to open full Amazon-style details, ingredients, and variant ordering.
+              <p className="text-gray-600 text-base sm:text-lg font-medium">
+                Tap any item card to open full Amazon-style details, or quick-add directly to your shopping cart.
               </p>
 
               {/* 5 CATEGORY FILTER TABS */}
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 pt-4">
                 {[
                   { id: 'all', label: 'All Items (8)' },
                   { id: 'sweets', label: '🍬 Sweets' },
@@ -1050,10 +1160,10 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                    className={`px-4.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-300 active-scale ${
                       activeTab === tab.id
-                        ? 'bg-amber-950 text-white shadow-md'
-                        : 'bg-amber-100/60 hover:bg-amber-100 text-amber-900'
+                        ? 'bg-gradient-to-r from-amber-950 to-amber-900 text-white shadow-glow-amber scale-105 border border-amber-600/40'
+                        : 'bg-amber-100/70 hover:bg-amber-100 text-amber-950 border border-amber-200/60'
                     }`}
                   >
                     {tab.label}
@@ -1065,13 +1175,11 @@ export default function App() {
             {/* 8 Card Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {filteredMenuItems.map((card) => {
-                const currentQty = quantities[card.id] || 1;
-
                 return (
                   <div 
                     key={card.id}
                     onClick={() => openProductDetail(card.id)}
-                    className="bg-white rounded-3xl border border-amber-900/10 shadow-lg shadow-amber-900/5 overflow-hidden flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                    className="bg-white rounded-3xl border border-amber-900/10 shadow-lg shadow-amber-900/5 overflow-hidden flex flex-col justify-between hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer"
                   >
                     {/* Card Top Image & Badges */}
                     <div className="relative h-52 overflow-hidden bg-amber-100">
@@ -1082,11 +1190,11 @@ export default function App() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                       
-                      <span className={`absolute top-4 left-4 text-xs font-bold px-3 py-1 rounded-full shadow-md ${card.tagBg}`}>
+                      <span className={`absolute top-4 left-4 text-xs font-extrabold px-3 py-1 rounded-full shadow-md ${card.tagBg}`}>
                         {card.tag}
                       </span>
 
-                      <span className="absolute bottom-4 right-4 text-xs font-bold px-3 py-1 bg-white/95 text-amber-950 backdrop-blur-md rounded-lg shadow-md">
+                      <span className="absolute bottom-4 right-4 text-xs font-extrabold px-3 py-1 bg-white/95 text-amber-950 backdrop-blur-md rounded-lg shadow-md border border-white">
                         {card.priceBadge}
                       </span>
                     </div>
@@ -1095,34 +1203,51 @@ export default function App() {
                     <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                       <div>
                         <div className="flex items-center justify-between">
-                          <h3 className="font-serif-heading text-lg font-bold text-amber-950 group-hover:text-amber-700 transition-colors">
+                          <h3 className="font-serif-heading text-lg font-extrabold text-amber-950 group-hover:text-amber-700 transition-colors">
                             {card.title}
                           </h3>
                         </div>
                         
-                        <div className="flex items-center gap-1 text-amber-500 text-xs font-bold mt-1">
+                        <div className="flex items-center gap-1 text-amber-500 text-xs font-extrabold mt-1">
                           <Star className="w-3.5 h-3.5 fill-current" />
                           <span>{card.rating}</span>
-                          <span className="text-gray-400">({card.ratingCount})</span>
+                          <span className="text-gray-400 font-medium">({card.ratingCount})</span>
                         </div>
 
-                        <p className="text-xs text-gray-500 mt-2 leading-relaxed line-clamp-2">
+                        <p className="text-xs text-gray-600 mt-2 leading-relaxed line-clamp-2 font-medium">
                           {card.description}
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {card.itemsList.map((item, i) => (
-                            <span key={i} className="text-[11px] font-medium px-2 py-0.5 bg-amber-50 text-amber-900 rounded-md border border-amber-200/60">
+                            <span key={i} className="text-[11px] font-bold px-2 py-0.5 bg-amber-50 text-amber-900 rounded-md border border-amber-200/60">
                               • {item}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      {/* View Details CTA Button */}
-                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-amber-900 group-hover:text-amber-700">
-                        <span>View Details & Options</span>
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      {/* Card Action Buttons (View Details + Quick Add to Cart) */}
+                      <div className="pt-3.5 border-t border-gray-100 flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openProductDetail(card.id);
+                          }}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-extrabold border border-amber-200/80 active-scale transition-all"
+                        >
+                          <span>Details</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+
+                        <button
+                          onClick={(e) => addToCart(card, card.variants[0], 1, e)}
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-900 to-amber-950 hover:from-black hover:to-amber-950 text-white text-xs font-extrabold shadow-glow-amber active-scale transition-all border border-amber-600/30"
+                          title="Add to Shopping Cart"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5 text-amber-400" />
+                          <span>+ Cart</span>
+                        </button>
                       </div>
                     </div>
 
@@ -1134,18 +1259,18 @@ export default function App() {
           </section>
 
           {/* CUSTOMER REVIEWS SECTION */}
-          <section className="py-16 bg-gradient-to-b from-amber-50/40 to-[#FFFDF9] border-t border-amber-900/10">
+          <section className="py-16 bg-gradient-to-b from-amber-50/50 to-[#FFFDF9] border-t border-amber-900/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               
               <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-100 text-amber-900 rounded-full text-xs font-bold">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-100 text-amber-950 rounded-full text-xs font-extrabold border border-amber-300/60 shadow-xs">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                   <span>4.9 / 5.0 Rating on Google Reviews</span>
                 </div>
                 <h2 className="font-serif-heading text-3xl sm:text-4xl font-extrabold text-amber-950">
                   Loved by Sweets & Cake Lovers
                 </h2>
-                <p className="text-gray-600 text-sm sm:text-base">
+                <p className="text-gray-600 text-sm sm:text-base font-medium">
                   Here is what our frequent neighborhood customers say about our quality.
                 </p>
               </div>
@@ -1157,17 +1282,17 @@ export default function App() {
                     <div className="flex text-amber-400">
                       {'★'.repeat(5)}
                     </div>
-                    <p className="text-gray-700 text-sm italic leading-relaxed">
+                    <p className="text-gray-700 text-sm italic leading-relaxed font-medium">
                       "The Kaju Katli and Motichoor Ladoos from {business.name} are unbeatable! Pure desi ghee flavor without being overly sweet. Ordered 15 boxes for a family event over WhatsApp, delivered right on time."
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                    <div className="w-9 h-9 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-sm">
+                  <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                    <div className="w-9 h-9 rounded-full bg-amber-200 text-amber-950 font-extrabold flex items-center justify-center text-sm shadow-xs">
                       RS
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Rajesh Sharma</h4>
-                      <p className="text-xs text-gray-500">Verified Google Reviewer</p>
+                      <h4 className="text-sm font-extrabold text-gray-900">Rajesh Sharma</h4>
+                      <p className="text-xs text-gray-500 font-medium">Verified Google Reviewer</p>
                     </div>
                   </div>
                 </div>
@@ -1177,17 +1302,17 @@ export default function App() {
                     <div className="flex text-amber-400">
                       {'★'.repeat(5)}
                     </div>
-                    <p className="text-gray-700 text-sm italic leading-relaxed">
+                    <p className="text-gray-700 text-sm italic leading-relaxed font-medium">
                       "Ordered a custom chocolate truffle cake for my daughter's birthday. It was fresh, soft, and decorated beautifully! Plus, ordering directly on WhatsApp took less than 2 minutes."
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                    <div className="w-9 h-9 rounded-full bg-pink-200 text-pink-900 font-bold flex items-center justify-center text-sm">
+                  <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                    <div className="w-9 h-9 rounded-full bg-pink-200 text-pink-950 font-extrabold flex items-center justify-center text-sm shadow-xs">
                       PK
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Priya Kapoor</h4>
-                      <p className="text-xs text-gray-500">Local Customer</p>
+                      <h4 className="text-sm font-extrabold text-gray-900">Priya Kapoor</h4>
+                      <p className="text-xs text-gray-500 font-medium">Local Customer</p>
                     </div>
                   </div>
                 </div>
@@ -1197,17 +1322,17 @@ export default function App() {
                     <div className="flex text-amber-400">
                       {'★'.repeat(5)}
                     </div>
-                    <p className="text-gray-700 text-sm italic leading-relaxed">
+                    <p className="text-gray-700 text-sm italic leading-relaxed font-medium">
                       "Evening samosas and hot dhokla from their store are my daily staple. Super clean hygiene and polite staff. Highly recommend visiting their store at {business.address}!"
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                    <div className="w-9 h-9 rounded-full bg-emerald-200 text-emerald-900 font-bold flex items-center justify-center text-sm">
+                  <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                    <div className="w-9 h-9 rounded-full bg-emerald-200 text-emerald-950 font-extrabold flex items-center justify-center text-sm shadow-xs">
                       AP
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Amit Patel</h4>
-                      <p className="text-xs text-gray-500">Regular Buyer</p>
+                      <h4 className="text-sm font-extrabold text-gray-900">Amit Patel</h4>
+                      <p className="text-xs text-gray-500 font-medium">Regular Buyer</p>
                     </div>
                   </div>
                 </div>
@@ -1220,7 +1345,7 @@ export default function App() {
       )}
 
       {/* ------------------- FOOTER & LOCATION DETAILS ------------------- */}
-      <footer className="bg-amber-950 text-amber-100 pt-16 pb-12 mt-auto">
+      <footer className="bg-amber-950 text-amber-100 pt-16 pb-12 mt-auto border-t border-amber-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-amber-800/60">
@@ -1231,11 +1356,11 @@ export default function App() {
                 <div className="w-10 h-10 rounded-xl bg-amber-500 text-amber-950 flex items-center justify-center text-xl font-bold">
                   🧁
                 </div>
-                <h3 className="font-serif-heading text-2xl font-bold text-white">
+                <h3 className="font-serif-heading text-2xl font-extrabold text-white">
                   {business.name}
                 </h3>
               </div>
-              <p className="text-sm text-amber-200/80 leading-relaxed">
+              <p className="text-sm text-amber-200/80 leading-relaxed font-medium">
                 Your trusted local Sweet Shop & Bakery, serving fresh desi ghee mithai, custom cakes, and oven-baked savories daily with zero commission online ordering.
               </p>
               
@@ -1244,7 +1369,7 @@ export default function App() {
                   href={getWhatsAppLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold flex items-center gap-2 shadow-md transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-extrabold flex items-center gap-2 shadow-glow-whatsapp active-scale transition-all"
                 >
                   <MessageCircle className="w-4 h-4 fill-current" />
                   <span>WhatsApp Order</span>
@@ -1252,7 +1377,7 @@ export default function App() {
 
                 <button
                   onClick={() => setIsQrModalOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs font-bold flex items-center gap-2 shadow-md transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-amber-950 text-xs font-extrabold flex items-center gap-2 shadow-glow-gold active-scale transition-all"
                 >
                   <QrCode className="w-4 h-4" />
                   <span>💳 Pay / Scan QR</span>
@@ -1262,11 +1387,11 @@ export default function App() {
 
             {/* Column 2: Location & Map Navigation */}
             <div className="md:col-span-4 space-y-4">
-              <h4 className="font-serif-heading text-lg font-bold text-white flex items-center gap-2">
+              <h4 className="font-serif-heading text-lg font-extrabold text-white flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-amber-400" />
                 <span>Store Location</span>
               </h4>
-              <p className="text-sm text-amber-200/90 leading-relaxed">
+              <p className="text-sm text-amber-200/90 leading-relaxed font-medium">
                 {business.address}
               </p>
               <div>
@@ -1274,7 +1399,7 @@ export default function App() {
                   href={getMapsLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs font-bold text-amber-300 hover:text-amber-100 underline decoration-amber-400/50 underline-offset-4"
+                  className="inline-flex items-center gap-2 text-xs font-extrabold text-amber-300 hover:text-amber-100 underline decoration-amber-400/50 underline-offset-4 active-scale transition-all"
                 >
                   <span>Open in Google Maps Navigation</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1284,24 +1409,24 @@ export default function App() {
 
             {/* Column 3: Operational Hours */}
             <div className="md:col-span-3 space-y-4">
-              <h4 className="font-serif-heading text-lg font-bold text-white flex items-center gap-2">
+              <h4 className="font-serif-heading text-lg font-extrabold text-white flex items-center gap-2">
                 <Clock className="w-5 h-5 text-amber-400" />
                 <span>Opening Hours</span>
               </h4>
-              <ul className="text-xs space-y-2 text-amber-200/80">
+              <ul className="text-xs space-y-2 text-amber-200/80 font-medium">
                 <li className="flex justify-between py-1 border-b border-amber-900">
                   <span>Monday - Sunday:</span>
-                  <span className="font-bold text-amber-100">8:00 AM – 10:30 PM</span>
+                  <span className="font-extrabold text-amber-100">8:00 AM – 10:30 PM</span>
                 </li>
                 <li className="flex justify-between py-1 border-b border-amber-900">
                   <span>Current Status:</span>
-                  <span className={`font-bold ${isOpenNow ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`font-extrabold ${isOpenNow ? 'text-emerald-400' : 'text-red-400'}`}>
                     {isOpenNow ? '🟢 Open Now' : '🔴 Closed'}
                   </span>
                 </li>
                 <li className="flex justify-between py-1">
                   <span>Delivery Available:</span>
-                  <span className="font-bold text-emerald-400">All Day (5 km)</span>
+                  <span className="font-extrabold text-emerald-400">All Day (5 km)</span>
                 </li>
               </ul>
             </div>
@@ -1309,7 +1434,7 @@ export default function App() {
           </div>
 
           {/* Footer Copyright Bottom */}
-          <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-amber-300/60 gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-amber-300/70 font-medium gap-4">
             <p>© {new Date().getFullYear()} {business.name}. All rights reserved.</p>
             <p className="flex items-center gap-1">
               <span>Powered by Direct WhatsApp Order System</span>
@@ -1320,30 +1445,43 @@ export default function App() {
       </footer>
 
       {/* ------------------- MOBILE STICKY ACTION BAR (< 768px) ------------------- */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-2xl p-2.5 grid grid-cols-3 gap-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-2.5 grid grid-cols-4 gap-2">
         <a
           href={getCallLink()}
-          className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-amber-100 text-amber-950 font-bold text-xs active-scale"
+          className="flex flex-col items-center justify-center py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-[11px] active-scale transition-all border border-amber-200/70"
         >
-          <Phone className="w-3.5 h-3.5 text-amber-800" />
+          <Phone className="w-4 h-4 text-amber-800 mb-0.5" />
           <span>Call</span>
         </a>
 
         <button
           onClick={() => setIsQrModalOpen(true)}
-          className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-amber-900 text-white font-bold text-xs active-scale"
+          className="flex flex-col items-center justify-center py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-extrabold text-[11px] active-scale transition-all border border-amber-300/80"
         >
-          <QrCode className="w-3.5 h-3.5 text-amber-400" />
+          <QrCode className="w-4 h-4 text-amber-800 mb-0.5" />
           <span>Pay QR</span>
+        </button>
+
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="relative flex flex-col items-center justify-center py-2 rounded-xl bg-amber-950 hover:bg-black text-white font-extrabold text-[11px] active-scale transition-all border border-amber-600/40"
+        >
+          <ShoppingCart className="w-4 h-4 text-amber-400 mb-0.5" />
+          <span>Cart</span>
+          {cartItemCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-amber-500 text-amber-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+              {cartItemCount}
+            </span>
+          )}
         </button>
 
         <a
           href={activeProduct ? `https://wa.me/${business.phone}?text=${encodeURIComponent(detailWhatsAppMessage)}` : getWhatsAppLink()}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-[#25D366] text-white font-bold text-xs shadow-md active-scale"
+          className="flex flex-col items-center justify-center py-2 rounded-xl bg-[#25D366] text-white font-extrabold text-[11px] shadow-md active-scale transition-all"
         >
-          <MessageCircle className="w-3.5 h-3.5 fill-current" />
+          <MessageCircle className="w-4 h-4 fill-current mb-0.5" />
           <span>WhatsApp</span>
         </a>
       </div>
@@ -1352,13 +1490,159 @@ export default function App() {
       <div className="fixed bottom-20 md:bottom-6 left-6 z-40">
         <button
           onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
-          className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-amber-950 text-amber-300 hover:bg-black font-bold text-xs sm:text-sm shadow-2xl border border-amber-600/40 hover:scale-105 transition-all group"
+          className="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-gradient-to-r from-amber-950 via-black to-amber-950 text-amber-300 font-extrabold text-xs sm:text-sm shadow-glow-amber border-2 border-amber-500/40 hover:scale-105 active-scale transition-all group"
           title="Click to edit shop details dynamically"
         >
           <Settings className="w-4 h-4 text-amber-400 group-hover:rotate-90 transition-transform duration-300" />
           <span>⚙️ Customize Preview</span>
         </button>
       </div>
+
+      {/* ------------------- SHOPPING CART SLIDE-OVER DRAWER ------------------- */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md h-full flex flex-col shadow-2xl border-l border-amber-900/10 animate-in slide-in-from-right duration-300">
+            
+            {/* Cart Drawer Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-950 text-amber-400 flex items-center justify-center font-bold">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif-heading text-xl font-extrabold text-amber-950">
+                    Your Shopping Cart
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {cartItemCount} {cartItemCount === 1 ? 'item' : 'items'} in cart
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="w-9 h-9 rounded-full bg-white hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors shadow-xs"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cart Drawer Items List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {cart.length === 0 ? (
+                <div className="text-center py-16 space-y-4">
+                  <div className="text-5xl">🛒</div>
+                  <h4 className="font-serif-heading text-lg font-bold text-gray-800">Your cart is currently empty</h4>
+                  <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                    Browse our sweets, cakes, and bakery items and click "+ Cart" to add fresh treats!
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      scrollToMenu();
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-950 text-white text-xs font-extrabold shadow-glow-amber active-scale transition-all"
+                  >
+                    <span>Browse Full Menu</span>
+                  </button>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div 
+                    key={item.cartItemId}
+                    className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70 flex items-center justify-between gap-4 shadow-xs"
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={item.title} 
+                      className="w-16 h-16 rounded-xl object-cover border border-amber-200 shrink-0" 
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-extrabold text-xs text-amber-950 truncate">{item.title}</h4>
+                      <p className="text-[11px] text-gray-500 font-bold">{item.variantLabel}</p>
+                      <p className="text-xs font-extrabold text-amber-900 mt-1">₹{item.unitPrice} each</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-amber-200">
+                        <button
+                          onClick={() => updateCartQuantity(item.cartItemId, -1)}
+                          className="w-6 h-6 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 flex items-center justify-center font-bold"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-extrabold text-amber-950 w-5 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => updateCartQuantity(item.cartItemId, 1)}
+                          className="w-6 h-6 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 flex items-center justify-center font-bold"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => removeFromCart(item.cartItemId)}
+                        className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 flex items-center justify-center transition-colors"
+                        title="Remove item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Cart Drawer Footer */}
+            {cart.length > 0 && (
+              <div className="p-6 border-t border-gray-100 bg-white space-y-4 shadow-xl">
+                
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-900 flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>Free doorstep delivery within 5 km radius!</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-500 font-semibold">
+                    <span>Subtotal ({cartItemCount} items):</span>
+                    <span>₹{cartTotal}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 font-semibold">
+                    <span>Packaging & Taxes:</span>
+                    <span className="text-emerald-700 font-extrabold">FREE</span>
+                  </div>
+                  <div className="flex justify-between text-base font-extrabold text-amber-950 pt-2 border-t border-gray-100">
+                    <span>Grand Total:</span>
+                    <span className="text-xl">₹{cartTotal}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={`https://wa.me/${business.phone}?text=${encodeURIComponent(getCartWhatsAppMessage())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#20bd5a] hover:to-[#199447] text-white font-extrabold text-base shadow-glow-whatsapp active-scale btn-shimmer-effect transition-all border border-emerald-400/30"
+                  >
+                    <MessageCircle className="w-5 h-5 fill-current" />
+                    <span>Checkout & Order via WhatsApp (₹{cartTotal})</span>
+                  </a>
+
+                  <button
+                    onClick={clearCart}
+                    className="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-extrabold active-scale transition-all"
+                  >
+                    Clear Cart
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
 
       {/* ------------------- CUSTOMIZE DRAWER MODAL ------------------- */}
       {isCustomizeOpen && (
@@ -1367,10 +1651,10 @@ export default function App() {
             
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
-                <h3 className="font-serif-heading text-xl font-bold text-amber-950 flex items-center gap-2">
+                <h3 className="font-serif-heading text-xl font-extrabold text-amber-950 flex items-center gap-2">
                   <span>⚙️ Customize Preview State</span>
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1 font-medium">
                   Change values to update all headers, footers & links dynamically.
                 </p>
               </div>
@@ -1385,7 +1669,7 @@ export default function App() {
             <form onSubmit={handleApplyChanges} className="space-y-4">
               
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1">
                   Shop Name
                 </label>
                 <input
@@ -1393,13 +1677,13 @@ export default function App() {
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                   placeholder="e.g. Royal Sweets & Bakery"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-semibold outline-none transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1">
                   WhatsApp / Call Phone Number (Country code + digits)
                 </label>
                 <input
@@ -1407,16 +1691,16 @@ export default function App() {
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                   placeholder="e.g. 919876543210"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-semibold outline-none transition-all"
                   required
                 />
-                <p className="text-[11px] text-gray-500 mt-1">
+                <p className="text-[11px] text-gray-500 mt-1 font-medium">
                   Only digits with country code (e.g. 919876543210). Used in `wa.me/` and `tel:`.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1">
                   Store Address
                 </label>
                 <textarea
@@ -1424,7 +1708,7 @@ export default function App() {
                   value={editForm.address}
                   onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                   placeholder="e.g. Main Market, Clock Tower, City Center"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm outline-none transition-all resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 text-sm font-semibold outline-none transition-all resize-none"
                   required
                 />
               </div>
@@ -1433,10 +1717,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={copyShareableLink}
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border transition-all ${
+                  className={`w-full py-3.5 px-5 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 border active-scale transition-all ${
                     copiedUrl 
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' 
-                      : 'bg-amber-100 hover:bg-amber-200/80 text-amber-950 border-amber-300'
+                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-600 shadow-glow-whatsapp' 
+                      : 'bg-amber-100 hover:bg-amber-200/90 text-amber-950 border-amber-300 shadow-xs'
                   }`}
                 >
                   {copiedUrl ? (
@@ -1456,7 +1740,7 @@ export default function App() {
               <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                 <button
                   type="submit"
-                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-amber-900 hover:bg-amber-950 text-white font-bold text-sm shadow-md active-scale transition-all"
+                  className="w-full sm:flex-1 py-3.5 px-5 rounded-xl bg-gradient-to-r from-amber-900 via-amber-950 to-amber-900 hover:from-black hover:to-amber-900 text-white font-extrabold text-sm shadow-glow-amber active-scale transition-all border border-amber-600/30"
                 >
                   Apply & Save Changes
                 </button>
@@ -1464,7 +1748,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={handleResetDefaults}
-                  className="w-full sm:w-auto py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs transition-all"
+                  className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs active-scale transition-all"
                 >
                   Reset Defaults
                 </button>
@@ -1489,20 +1773,20 @@ export default function App() {
             </button>
 
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mx-auto mb-2">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-950 flex items-center justify-center mx-auto mb-2 shadow-xs">
                 <QrCode className="w-6 h-6 text-amber-800" />
               </div>
-              <h3 className="font-serif-heading text-xl font-bold text-amber-950">
+              <h3 className="font-serif-heading text-xl font-extrabold text-amber-950">
                 Scan & Pay via UPI
               </h3>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 font-medium mt-1">
                 Direct store payment for {business.name}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-200 flex flex-col items-center justify-center space-y-3">
+            <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50 to-amber-100/70 border border-amber-200 flex flex-col items-center justify-center space-y-3 shadow-xs">
               
-              <div className="w-48 h-48 bg-white p-3 rounded-xl border-2 border-amber-900/20 shadow-md flex items-center justify-center relative">
+              <div className="w-48 h-48 bg-white p-3 rounded-2xl border-2 border-amber-900/20 shadow-md flex items-center justify-center relative">
                 <svg className="w-full h-full text-amber-950" viewBox="0 0 100 100" fill="currentColor">
                   <rect x="5" y="5" width="25" height="25" fill="currentColor" rx="4" />
                   <rect x="9" y="9" width="17" height="17" fill="white" rx="2" />
@@ -1543,7 +1827,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="w-full bg-white px-3 py-2 rounded-xl border border-amber-200 flex items-center justify-between text-xs">
+              <div className="w-full bg-white px-3 py-2 rounded-xl border border-amber-200 flex items-center justify-between text-xs shadow-xs">
                 <div className="truncate text-left">
                   <span className="text-[10px] text-gray-500 block uppercase font-bold">UPI ID</span>
                   <span className="font-extrabold text-amber-950">{business.phone}@upi</span>
@@ -1551,16 +1835,20 @@ export default function App() {
                 
                 <button
                   onClick={copyUpiId}
-                  className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-[11px] flex items-center gap-1 shrink-0 transition-colors"
+                  className={`px-3 py-1.5 rounded-lg font-extrabold text-[11px] flex items-center gap-1.5 active-scale transition-all ${
+                    copiedUpi 
+                      ? 'bg-emerald-600 text-white shadow-xs' 
+                      : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300/60'
+                  }`}
                 >
                   {copiedUpi ? (
                     <>
-                      <Check className="w-3 h-3 text-emerald-600" />
-                      <span className="text-emerald-700">Copied</span>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3 text-amber-800" />
+                      <Copy className="w-3.5 h-3.5 text-amber-800" />
                       <span>Copy</span>
                     </>
                   )}
@@ -1571,14 +1859,14 @@ export default function App() {
 
             <div className="text-[11px] text-gray-500 font-semibold space-y-1">
               <p>Accepts GPay, PhonePe, Paytm & all UPI apps</p>
-              <p className="text-[10px] text-amber-700 italic">
+              <p className="text-[10px] text-amber-700 italic font-bold">
                 * Please share screenshot of payment on WhatsApp after paying.
               </p>
             </div>
 
             <button
               onClick={() => setIsQrModalOpen(false)}
-              className="w-full py-2.5 rounded-xl bg-amber-950 hover:bg-black text-white font-bold text-xs transition-colors"
+              className="w-full py-3 rounded-xl bg-amber-950 hover:bg-black text-white font-extrabold text-xs shadow-glow-amber active-scale transition-all"
             >
               Done / Close
             </button>
