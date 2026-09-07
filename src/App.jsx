@@ -33,7 +33,10 @@ import {
   ShoppingCart,
   Heart,
   Trash2,
-  ArrowRight
+  ArrowRight,
+  Lock,
+  Unlock,
+  Key
 } from 'lucide-react';
 
 export default function App() {
@@ -43,6 +46,13 @@ export default function App() {
     phone: '919876543210',
     address: 'Main Market, Clock Tower, City Center',
   });
+
+  // ADMIN / OWNER ACCESS CONTROL STATE
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [logoClickCount, setLogoClickCount] = useState(0);
 
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -69,6 +79,93 @@ export default function App() {
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // ADMIN MODE DETECTION ON MOUNT
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isAdminParam = params.get('admin') === 'true' || params.get('edit') === 'true' || params.get('admin') === '1';
+    const savedAdmin = localStorage.getItem('bakery_admin_mode') === 'true';
+
+    if (isAdminParam || savedAdmin) {
+      setIsAdmin(true);
+      if (isAdminParam) {
+        localStorage.setItem('bakery_admin_mode', 'true');
+      }
+    }
+  }, []);
+
+  // KEYBOARD SHORTCUT (Ctrl + Shift + A) FOR OWNER PIN PROMPT
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        if (isAdmin) {
+          setIsCustomizeOpen(prev => !prev);
+        } else {
+          setIsPinModalOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdmin]);
+
+  // TRIPLE CLICK LOGO HANDLER TO UNLOCK OWNER ADMIN MODE
+  const handleLogoClick = (e) => {
+    if (selectedProductId) {
+      e.preventDefault();
+      closeProductDetail();
+    }
+    setLogoClickCount(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (logoClickCount === 0) return;
+
+    if (logoClickCount >= 3) {
+      setLogoClickCount(0);
+      if (!isAdmin) {
+        setIsPinModalOpen(true);
+      } else {
+        setIsCustomizeOpen(true);
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setLogoClickCount(0);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [logoClickCount, isAdmin]);
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    if (pinInput.trim() === '1234') { // Default Owner PIN
+      setIsAdmin(true);
+      localStorage.setItem('bakery_admin_mode', 'true');
+      setIsPinModalOpen(false);
+      setPinInput('');
+      setPinError('');
+      setIsCustomizeOpen(true);
+      triggerToast('🔓 Owner Admin Mode Unlocked!');
+    } else {
+      setPinError('Incorrect Owner Passcode. Try 1234');
+    }
+  };
+
+  const exitAdminMode = () => {
+    setIsAdmin(false);
+    localStorage.removeItem('bakery_admin_mode');
+    setIsCustomizeOpen(false);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('admin');
+    url.searchParams.delete('edit');
+    window.history.replaceState({}, '', url.toString());
+
+    triggerToast('🔒 Exited Admin Mode. Customize button hidden.');
   };
 
   const addToCart = (product, variant = null, qty = 1, e = null) => {
@@ -591,22 +688,24 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-[#FFFDF9]/90 backdrop-blur-md border-b border-amber-900/10 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3 sm:gap-4">
           
-          {/* Logo & Shop Name */}
+          {/* Logo & Shop Name (Triple-click logo triggers Owner Admin PIN prompt) */}
           <a 
             href="#" 
-            onClick={(e) => {
-              e.preventDefault();
-              if (selectedProductId) closeProductDetail();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center gap-3 group"
+            onClick={handleLogoClick}
+            className="flex items-center gap-3 group select-none"
+            title="Royal Sweets & Bakery (Owner: Triple-click logo to access admin edit mode)"
           >
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300 border border-amber-300/40">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-500 to-amber-400 flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform duration-300 border border-amber-300/40 relative">
               <span className="text-2xl">🧁</span>
+              {isAdmin && (
+                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white p-0.5 rounded-full border border-white" title="Admin Mode Active">
+                  <Lock className="w-3 h-3" />
+                </span>
+              )}
             </div>
             <div>
-              <h1 className="font-serif-heading font-extrabold text-lg sm:text-2xl text-amber-950 leading-tight group-hover:text-amber-700 transition-colors">
-                {business.name}
+              <h1 className="font-serif-heading font-extrabold text-lg sm:text-2xl text-amber-950 leading-tight group-hover:text-amber-700 transition-colors flex items-center gap-1.5">
+                <span>{business.name}</span>
               </h1>
               <p className="text-[11px] sm:text-xs text-amber-700/80 font-bold flex items-center gap-1">
                 Fresh Mithai & Bakery
@@ -1486,17 +1585,20 @@ export default function App() {
         </a>
       </div>
 
-      {/* ------------------- FLOATING QUICK-EDIT BUTTON ------------------- */}
-      <div className="fixed bottom-20 md:bottom-6 left-6 z-40">
-        <button
-          onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
-          className="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-gradient-to-r from-amber-950 via-black to-amber-950 text-amber-300 font-extrabold text-xs sm:text-sm shadow-glow-amber border-2 border-amber-500/40 hover:scale-105 active-scale transition-all group"
-          title="Click to edit shop details dynamically"
-        >
-          <Settings className="w-4 h-4 text-amber-400 group-hover:rotate-90 transition-transform duration-300" />
-          <span>⚙️ Customize Preview</span>
-        </button>
-      </div>
+      {/* ------------------- FLOATING QUICK-EDIT BUTTON (RESTRICTED TO OWNER ADMIN MODE ONLY) ------------------- */}
+      {isAdmin && (
+        <div className="fixed bottom-20 md:bottom-6 left-6 z-40 animate-in fade-in zoom-in duration-300">
+          <button
+            onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
+            className="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-gradient-to-r from-amber-950 via-black to-amber-950 text-amber-300 font-extrabold text-xs sm:text-sm shadow-glow-amber border-2 border-amber-500/40 hover:scale-105 active-scale transition-all group"
+            title="Owner Edit Mode Active"
+          >
+            <Settings className="w-4 h-4 text-amber-400 group-hover:rotate-90 transition-transform duration-300" />
+            <span>⚙️ Edit Store Details</span>
+            <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/40">Owner</span>
+          </button>
+        </div>
+      )}
 
       {/* ------------------- SHOPPING CART SLIDE-OVER DRAWER ------------------- */}
       {isCartOpen && (
@@ -1644,18 +1746,86 @@ export default function App() {
         </div>
       )}
 
-      {/* ------------------- CUSTOMIZE DRAWER MODAL ------------------- */}
-      {isCustomizeOpen && (
+      {/* ------------------- OWNER PASSCODE UNLOCK MODAL ------------------- */}
+      {isPinModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-amber-900/10 space-y-5 animate-in fade-in zoom-in duration-200 relative">
+            
+            <button
+              onClick={() => {
+                setIsPinModalOpen(false);
+                setPinError('');
+                setPinInput('');
+              }}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-950 text-amber-400 flex items-center justify-center mx-auto mb-2 shadow-md">
+                <Key className="w-6 h-6" />
+              </div>
+              <h3 className="font-serif-heading text-xl font-extrabold text-amber-950">
+                Owner Access Lock
+              </h3>
+              <p className="text-xs text-gray-500 font-medium mt-1">
+                Enter your Owner PIN to enable store customization.
+              </p>
+            </div>
+
+            <form onSubmit={handlePinSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="password"
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError('');
+                  }}
+                  placeholder="Enter Owner PIN (Default: 1234)"
+                  className="w-full text-center tracking-widest text-lg font-bold px-4 py-3 rounded-2xl border border-amber-300 focus:border-amber-700 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                  autoFocus
+                  required
+                />
+                {pinError && (
+                  <p className="text-xs text-red-600 font-bold mt-2">{pinError}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-900 to-amber-950 hover:from-black hover:to-amber-900 text-white font-extrabold text-sm shadow-glow-amber active-scale transition-all"
+              >
+                Unlock Store Edit Mode
+              </button>
+            </form>
+
+            <p className="text-[11px] text-gray-400 font-medium">
+              Default passcode: <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded font-bold">1234</code>. You can also append <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded font-bold">?admin=true</code> in your URL bar.
+            </p>
+
+          </div>
+        </div>
+      )}
+
+      {/* ------------------- CUSTOMIZE DRAWER MODAL (RESTRICTED TO OWNER) ------------------- */}
+      {isAdmin && isCustomizeOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-amber-900/10 space-y-6 animate-in fade-in zoom-in duration-200 relative">
             
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
-                <h3 className="font-serif-heading text-xl font-extrabold text-amber-950 flex items-center gap-2">
-                  <span>⚙️ Customize Preview State</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-extrabold border border-emerald-300">
+                    🔒 Owner Mode Active
+                  </span>
+                </div>
+                <h3 className="font-serif-heading text-xl font-extrabold text-amber-950 mt-1 flex items-center gap-2">
+                  <span>⚙️ Store Details Editor</span>
                 </h3>
-                <p className="text-xs text-gray-500 mt-1 font-medium">
-                  Change values to update all headers, footers & links dynamically.
+                <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                  Update your shop name, phone number & address across the site.
                 </p>
               </div>
               <button
@@ -1751,6 +1921,17 @@ export default function App() {
                   className="w-full sm:w-auto py-3.5 px-5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs active-scale transition-all"
                 >
                   Reset Defaults
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 text-center">
+                <button
+                  type="button"
+                  onClick={exitAdminMode}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 hover:text-red-900 underline decoration-red-300 underline-offset-4"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Lock & Exit Owner Mode (Hide Edit Button)</span>
                 </button>
               </div>
 
